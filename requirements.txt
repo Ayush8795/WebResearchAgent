@@ -1,0 +1,6 @@
+beautifulsoup4==4.13.4
+Flask==2.3.2
+Flask_Cors==4.0.0
+groq==0.23.1
+python-dotenv==1.1.0
+Requests==2.32.3

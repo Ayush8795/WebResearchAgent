@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 500px;
+            height: 600px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background-color: #4a6fa5;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background-color: #dcf8c6;
+            margin-left: auto;
+            border-top-right-radius: 0;
+        }
+
+        .bot-message {
+            background-color: #e5e5ea;
+            margin-right: auto;
+            border-top-left-radius: 0;
+        }
+
+        .chat-input-container {
+            display: flex;
+            padding: 10px;
+            background-color: #fff;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .chat-input:disabled {
+            background-color: #f0f0f0;
+            cursor: not-allowed;
+        }
+
+        .send-button {
+            background-color: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            margin-left: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+
+        .send-button:disabled {
+            background-color: #a0a0a0;
+            cursor: not-allowed;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background-color: #3d5d8a;
+        }
+
+        .error-message {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .response-list-item {
+            background-color: #e5e5ea;
+            padding: 8px 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+        }
+        
+        .loader-container {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        
+        .loader {
+            display: flex;
+            align-items: center;
+        }
+        
+        .loader-dot {
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            background-color: #4a6fa5;
+            margin: 0 4px;
+            animation: bounce 1.5s infinite ease-in-out;
+        }
+        
+        .loader-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .loader-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .loader-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { 
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            40% { 
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">Chatbot</div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot-message">
+                Hi! How can I help you today?
+            </div>
+        </div>
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" id="user-input" placeholder="Type a message..." autofocus>
+            <button class="send-button" id="send-button">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatMessages = document.getElementById('chat-messages');
+            const userInput = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-button');
+
+            // Send message when send button is clicked
+            sendButton.addEventListener('click', sendMessage);
+
+            // Send message when Enter key is pressed
+            userInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            function sendMessage() {
+                const message = userInput.value.trim();
+                if (message === '') return;
+
+                // Add user message to chat
+                addMessage(message, 'user');
+                userInput.value = '';
+                
+                // Show loader
+                const loaderContainer = document.createElement('div');
+                loaderContainer.className = 'loader-container';
+                loaderContainer.id = 'loader';
+                
+                const loader = document.createElement('div');
+                loader.className = 'loader';
+                
+                for (let i = 0; i < 3; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'loader-dot';
+                    loader.appendChild(dot);
+                }
+                
+                loaderContainer.appendChild(loader);
+                chatMessages.appendChild(loaderContainer);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Temporarily disable input while waiting
+                userInput.disabled = true;
+                sendButton.disabled = true;
+
+                // Send request to backend
+                fetch('/queryResponse/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: message })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Remove loader
+                    const loader = document.getElementById('loader');
+                    if (loader) {
+                        loader.remove();
+                    }
+                    
+                    if (data.success) {
+                        // Display the response data as list items
+                        const responseDiv = document.createElement('div');
+                        responseDiv.className = 'message bot-message';
+                        
+                        if (Array.isArray(data.data)) {
+                            // If data is an array, create list items
+                            data.data.forEach(item => {
+                                const listItem = document.createElement('div');
+                                listItem.className = 'response-list-item';
+                                listItem.textContent = item;
+                                responseDiv.appendChild(listItem);
+                            });
+                        } else {
+                            // If not an array, display as regular text
+                            responseDiv.textContent = data.data;
+                        }
+                        
+                        chatMessages.appendChild(responseDiv);
+                    } else {
+                        // Display error message
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'error-message';
+                        errorDiv.textContent = data.message || 'An error occurred';
+                        chatMessages.appendChild(errorDiv);
+                    }
+                    
+                    // Scroll to the bottom of messages
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Freeze the chat
+                    freezeChat();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    
+                    // Remove loader
+                    const loader = document.getElementById('loader');
+                    if (loader) {
+                        loader.remove();
+                    }
+                    
+                    // Display error message
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'error-message';
+                    errorDiv.textContent = 'Failed to connect to the server';
+                    chatMessages.appendChild(errorDiv);
+                    
+                    // Scroll to the bottom of messages
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Freeze the chat
+                    freezeChat();
+                });
+            }
+
+            function addMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message`;
+                messageDiv.textContent = text;
+                chatMessages.appendChild(messageDiv);
+                
+                // Scroll to the bottom of messages
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function freezeChat() {
+                // Disable input and button
+                userInput.disabled = true;
+                sendButton.disabled = true;
+                
+                // Add a message to indicate chat is frozen
+                const freezeMessage = document.createElement('div');
+                freezeMessage.className = 'message bot-message';
+                freezeMessage.textContent = 'Chat is now closed. Refresh to start a new conversation.';
+                chatMessages.appendChild(freezeMessage);
+                
+                // Scroll to the bottom of messages
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
