@@ -2,3 +2,4 @@ env
 cache
 temp
 __pycache__
+.env
