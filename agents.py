@@ -273,7 +273,7 @@ def _store_in_cache(query, crawled_data, extracted_info):
 
 def _check_cache(query):
     os.makedirs("cache", exist_ok = True)
-    query_hash = hashlib.sha256(query.encode()).hexdigest()
+    query_hash = hashlib.sha256(query.lower().encode()).hexdigest()
     cache_file_path = f"cache/{query_hash}.json"
     
     if os.path.exists(cache_file_path):
