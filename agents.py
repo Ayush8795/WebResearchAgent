@@ -214,6 +214,10 @@ class InformationExtractor:
         if not info_list1:
             return info_list2
         
+        if type(info_list1) != list or type(info_list2) != list:
+            list1_str = str(info_list1)
+            list2_str = str(info_list2)
+        
         list1_str = " \n".join(info_list1)
         list2_str = " \n".join(info_list2)
 

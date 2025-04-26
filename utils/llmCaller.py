@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import requests
 import json
 from openai import AzureOpenAI
+import tiktoken
 
 load_dotenv()
 
@@ -17,8 +18,15 @@ endpoint = os.getenv("GPT4V_ENDPOINT")
 
 version = os.getenv('API_VERSION')
 
+def checkTokenLength(messages):
+    text = str(messages)
+    tokenizer = tiktoken.get_encoding("cl100k_base")  # Default tokenizer for most OpenAI models
+    tokens = tokenizer.encode(text)
+    
+    return tokens
 
-def callGPT(prompt, max_tokens = 4096):
+
+def _callGPT(prompt, max_tokens = 4096):
     client = AzureOpenAI(azure_endpoint = endpoint, api_key = gpt_api_key, api_version = version)
     messages = [
             {
@@ -41,6 +49,19 @@ def callGPT(prompt, max_tokens = 4096):
     response = output.choices[0].message.content
     return response
 
+
+def callGPT(prompt, max_tokens = 4096):
+    tokens = checkTokenLength(prompt)
+    
+    if len(tokens) > 127999:
+        while len(tokens) > 127999:
+            hlf_len = len(prompt) // 2
+            prompt = prompt[ : hlf_len]
+            tokens = checkTokenLength(prompt)
+        
+        return _callGPT(prompt, max_tokens)
+    
+    return _callGPT(prompt, max_tokens)
 
 
 def callDeepSeek(prompt):
@@ -69,8 +90,6 @@ def callDeepSeek(prompt):
     return response.json().get("choices")[0].get("message").get("content") if response.status_code == 200 else None
 
 
-
-
 def callLLama(prompt):
     return callGPT(prompt)
     client = Groq(
@@ -97,15 +116,4 @@ def callLLama(prompt):
         print(f"Error: {e}")
         return None
         
-
-
-# def messages():
-#     query= ["what is light","who discovered it"]
-#     sr=''
-#     for qr in query:
-#         print(stream_chat(qr))
-#         time.sleep(5)
-
-
-messages = callLLama("What is the capital of France?")
-print(messages)
+#returning GPT call as Llama was throwing Rate Limit error (Free tier model)
