@@ -4,7 +4,7 @@ import json
 
 queries = [
     "What is the capital of France?",
-    "Tell me a joke.",
+    "dollar prices",
     "What is the weather like today?",
     "Who won the last World Series?",
     "Explain quantum computing in simple terms.",
@@ -12,7 +12,8 @@ queries = [
     "How do I make a perfect cup of coffee?",
     "What is the meaning of life?",
     "Can you recommend a good book to read?",
-    "What is the fastest land animal?"
+    "What is the fastest land animal?",
+    "How was the Effiel Tower built?"
 ]
 
 def test_query_response():

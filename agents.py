@@ -214,12 +214,14 @@ class InformationExtractor:
         if not info_list1:
             return info_list2
         
+        list1_str, list2_str = "", ""
+        
         if type(info_list1) != list or type(info_list2) != list:
             list1_str = str(info_list1)
             list2_str = str(info_list2)
-        
-        list1_str = " \n".join(info_list1)
-        list2_str = " \n".join(info_list2)
+        else:
+            list1_str = " \n".join(info_list1)
+            list2_str = " \n".join(info_list2)
 
         prompt = f"""
         You are provided with two lists of information and a search query.
