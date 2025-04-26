@@ -3,51 +3,44 @@ import os
 from dotenv import load_dotenv
 import requests
 import json
+from openai import AzureOpenAI
 
 load_dotenv()
+
 api_key = os.getenv("GROQ_API_KEY")
 deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
 
-client = Groq(
-    api_key = api_key,
-)
+#gpt creds
 
-def stream_chat(query,history=None):
-    messages = []
-    
-    user_input = query
+gpt_api_key = os.getenv("GPT4V_KEY")
+endpoint = os.getenv("GPT4V_ENDPOINT")
 
-    system_input = """
-    You are a helpful assistant who answers the queries.
-    """
+version = os.getenv('API_VERSION')
+
+
+def callGPT(prompt, max_tokens = 4096):
+    client = AzureOpenAI(azure_endpoint = endpoint, api_key = gpt_api_key, api_version = version)
+    messages = [
+            {
+                "role": "user",
+                "content": [
+                {
+                    "type": "text",
+                    "text": prompt
+                }
+                ]
+            }
+            ]
     
-    if history:
-        full_response = ""
-        for his in history:
-            full_response += his + "\n\n"
-        messages.append({"role": "assistant", "content": full_response})
-    messages.append({"role": "user", "content": user_input})
-    messages.append({"role": "system", "content":system_input})
-    
-    completion = client.chat.completions.create(
-        model = "llama-3.3-70b-versatile",
+    output = client.chat.completions.create(
+        model = "gpt4onew",
         messages = messages,
-        temperature = 1,
-        max_tokens = 4096,
-        top_p = 1,
-        stream = True,
-        stop = None,
-    )
-    
-    print("AI: ", end="", flush=True)
-    
-    ret_content = ""
-    for chunk in completion:
-        if chunk.choices[0].delta.content is not None:
-            content = chunk.choices[0].delta.content
-            ret_content += content
-    
-    return ret_content
+        max_tokens = max_tokens
+        
+      )
+    response = output.choices[0].message.content
+    return response
+
 
 
 def callDeepSeek(prompt):
@@ -72,13 +65,17 @@ def callDeepSeek(prompt):
             
         })
     )
-
+    print(response.content)
     return response.json().get("choices")[0].get("message").get("content") if response.status_code == 200 else None
 
 
 
 
 def callLLama(prompt):
+    return callGPT(prompt)
+    client = Groq(
+        api_key = api_key,
+    )
     try:
         messages = [
             {"role": "user", "content": prompt},
@@ -96,8 +93,10 @@ def callLLama(prompt):
         )
 
         return completion.choices[0].message.content
-    except:
-        return callDeepSeek(prompt)
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+        
 
 
 # def messages():
@@ -108,5 +107,5 @@ def callLLama(prompt):
 #         time.sleep(5)
 
 
-# messages = callDeepSeek("What is the capital of France?")
-# print(messages)
+messages = callLLama("What is the capital of France?")
+print(messages)
